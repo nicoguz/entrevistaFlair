@@ -12,7 +12,7 @@ MAX_ZOMBIES_IN_ROOM = 50
 # Capacidad máxima a la cual los zombies se sienten cómodos en una habitación
 MAX_COMODITY_ZOMBIES = 20
 
-def determine_zombies_moving(current_room: Room, adjacent_room: Room) -> int:
+def determine_zombies_moving(current_room: "Room", adjacent_room: "Room") -> int:
     remaining_zombies = current_room.n_zombies - current_room.leaving_zombies
 
     # Primero chequeamos si podemos mover zombies y si la habitación adyacente se llenará

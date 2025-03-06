@@ -3,13 +3,18 @@ from classes import Simulation
 from aux_functions import find_save_file
 from os import listdir
 import re
+from typing import Union
+
+general_state = {
+    "total_floors": None,
+    "rooms_per_floor": None
+}
 
 # chosen_option = None
 def main_simulation():
 
     simulation = None
-    TOTAL_FLOORS = None
-    ROOMS_PER_FLOOR = None
+
 
     print("Bienvenido al simulador de zombies!")
     print("Para comenzar escoge una opción ingresando el numero correspondiente:")
@@ -22,6 +27,7 @@ def main_simulation():
             print("Opción no valida. Para escoger solo debes ingresar el número de la opción que deseas. Intenta de nuevo:")
             chosen_option = input(STARTING_MENU).strip()
 
+        # Nueva simulación
         if chosen_option == "1":
             total_floors_message = "Ingresa el total de pisos del edificio (deja en blanco para valor default): "
             total_floors = input(total_floors_message).strip()
@@ -48,35 +54,19 @@ def main_simulation():
             rooms_per_floor = int(rooms_per_floor)
 
             simulation = Simulation(total_floors, rooms_per_floor)
-            TOTAL_FLOORS = total_floors
-            ROOMS_PER_FLOOR = rooms_per_floor
+            general_state["total_floors"] = total_floors
+            general_state["rooms_per_floor"] = rooms_per_floor
             break
 
+        # Cargar simulación
         elif chosen_option == "2":
-            print("Estados guardados:")
-            any_save_file = False
-            for file in listdir("./save_states"):
-                if file.endswith(".json"):
-                    any_save_file = True
-                    print(f"- {file}")
-            
-            if not any_save_file:
-                print("No hay estados guardados. Volviendo al menú inicial...")
+            state_info = load_state()
+
+            # Volvemos al menú principal
+            if state_info == "continue":
                 continue
 
-            load_file_text = "Ingresa el nombre del archivo a cargar o deja en blanco para volver atras: "
-
-            file_name = input(load_file_text).strip()
-
-            while file_name != "" and find_save_file(file_name) == False:
-                print(f"Archivo {file_name} no encontrado. Intenta de nuevo:")
-                file_name = input(load_file_text).strip()
-
-            if file_name == "":
-                continue
-            
-            simulation = Simulation()
-            TOTAL_FLOORS, ROOMS_PER_FLOOR = simulation.load_state(file_name)
+            simulation = state_info
             break
         
         elif chosen_option == "3":
@@ -85,7 +75,7 @@ def main_simulation():
                 print("Hasta luego!")
                 return
             else:
-                print("Cancelado.Volviendo al menú principal...")
+                print("Cancelado. Volviendo al menú principal...")
                 continue
     
     # Loop principal, se rompe solo si se escoge una opcion valida
@@ -103,10 +93,12 @@ def main_simulation():
         elif chosen_option == "2":
             simulation.run_step()
         # Bloquear, desbloquear y limpiar habitación
-        elif chosen_option == "3" or chosen_option == "4" or chosen_option == "5":
+        elif chosen_option == "3" or chosen_option == "4" or chosen_option == "5" or chosen_option == "6":
             room_to_block = input(ROOM_ACTION_TEXT).strip()
 
-            while room_to_block != "" and re.fullmatch(ROOM_ACTION_REGEX(TOTAL_FLOORS, ROOMS_PER_FLOOR), room_to_block) == None:
+            room_regex = ROOM_ACTION_REGEX(general_state["total_floors"], general_state["rooms_per_floor"])
+
+            while (room_to_block != "" and re.fullmatch(room_regex, room_to_block) == None):
                 print("Opción no valida o habitación no encontrada. Intenta de nuevo:")
                 room_to_block = input(ROOM_ACTION_TEXT).strip()
             
@@ -125,19 +117,104 @@ def main_simulation():
                 simulation.building.rooms[floor_number][room_number].unblock_room()
             elif chosen_option == "5":
                 simulation.building.rooms[floor_number][room_number].clean_room()
-        elif chosen_option == "6":
-            pass
+            elif chosen_option == "6":
+                simulation.building.rooms[floor_number][room_number].reset_sensor()
+        
+        # Menú configuración
         elif chosen_option == "7":
+            new_simulation = config_loop(simulation)
+
+            if new_simulation is not None:
+                simulation = new_simulation
+
+        elif chosen_option == "8":
             sure = input("Estás seguro que deseas salir? (s/n): ").strip()
             if sure.lower() == "s":
                 print("Hasta luego!")
                 return
             else:
-                print("Cancelado.Volviendo al menú principal...")
+                print("Cancelado. Volviendo al menú principal...")
                 continue
                 
+def load_state() -> Union[str, Simulation]:
+    print("Estados guardados:")
+    any_save_file = False
+    for file in listdir("./save_states"):
+        if file.endswith(".json"):
+            any_save_file = True
+            print(f"- {file}")
+    
+    if not any_save_file:
+        print("No hay estados guardados. Volviendo al menú inicial...")
+        return "continue"
 
+    load_file_text = "Ingresa el nombre del archivo a cargar o deja en blanco para volver atras: "
 
+    file_name = input(load_file_text).strip()
+
+    while file_name != "" and find_save_file(file_name) == False:
+        print(f"Archivo {file_name} no encontrado. Intenta de nuevo:")
+        file_name = input(load_file_text).strip()
+
+    if file_name == "":
+        return "continue"
+    
+    print("Cargando estado...")
+    
+    simulation = Simulation()
+    total_floors, rooms_per_floor = simulation.load_state(file_name)
+
+    general_state["total_floors"] = total_floors
+    general_state["rooms_per_floor"] = rooms_per_floor
+
+    print("Estado cargado con éxito")
+    
+    return simulation
+
+def config_loop(simulation: Simulation) -> None:
+    while True:
+        chosen_option = input(CONFIG_MENU).strip()
+
+        while re.fullmatch(CONFIG_MENU_REGEX, chosen_option) == None:
+            print("Opción no valida. Para escoger solo debes ingresar el número de la opcion que deseas. Intenta de nuevo:")
+            chosen_option = input(CONFIG_MENU).strip()
+
+        # TODO: ver si añado verbose
+        if chosen_option == "1":
+            pass
+        # Guardar estado
+        elif chosen_option == "2":
+            file_name = input("Ingresa el nombre con el que deseas guardar el estado: ")
+            print("Guardando estado...")
+            saved_name = simulation.save_state(file_name)
+            print(f"Estado guardado en el archivo {saved_name}")
+
+        # Cargar estado
+        elif chosen_option == "3":
+            state_info = load_state()
+
+            # Volvemos al menú principal
+            if state_info[0] == "continue":
+                continue
+
+            simulation = state_info
+            return simulation
+
+        # Resetear simulación
+        elif chosen_option == "4":
+            response = input("Estás seguro que deseas resetear la simulación? (s/n): ").strip()
+
+            if response.lower() == "s":
+                print("Reseteando simulación...")
+                simulation.reset()
+                print("Simulación reseteada con éxito")
+                return
+        
+        elif chosen_option == "5":
+            return
 
 
 # TODO: Limitar los save states para evitar demasiados archivos
+
+if __name__ == "__main__":
+    main_simulation()

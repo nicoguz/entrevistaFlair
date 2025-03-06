@@ -16,25 +16,23 @@ MAIN_MENU = f"""
 [3] Bloquear Habitación
 [4] Desbloquear Habitación
 [5] Limpiar Habitación
-[6] Menu Configuración
-[7] Salir
+[6] Resetear Sensor de Habitación
+[7] Menu Configuración
+[8] Salir
 {line}\n
 """
-MAIN_MENU_REGEX = r"[1-7]"
+MAIN_MENU_REGEX = r"[1-8]"
 
 CONFIG_MENU = f"""
 {line}
-[1] Capacidad de Habitaciones
-[2] Capacidad de comodidad de Zombies
-[3] Resetear Sensor de una Habitación
-[4] Verbosidad
-[5] Guardar Estado
-[6] Cargar Estado
-[7] Resetear Simulación
-[8] Volver al Menu Principal
+[1] Verbosidad
+[2] Guardar Estado
+[3] Cargar Estado
+[4] Resetear Simulación
+[5] Volver al Menu Principal
 {line}\n
 """
-CONFIG_MENU_REGEX = r"[1-8]"
+CONFIG_MENU_REGEX = r"[1-5]"
 
 ROOM_ACTION_TEXT = """\
 Ingresa el número del piso y número de la habitación en forma Piso-Habitación.

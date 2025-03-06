@@ -21,9 +21,9 @@ class Building:
             self.rooms.append([Room(n_room) for n_room in range(rooms_per_floor)])
     
     def show_state(self) -> None:
-        for floor in self.rooms:
+        for floor_idx, floor in enumerate(self.rooms):
             print("-"*30)
-            print(f"Floor {floor[0].id}:\n")
+            print(f"Piso {floor_idx}:\n")
             for room in floor:
                 print(room.show_state())
     
@@ -156,7 +156,7 @@ class Room:
         self.blocked = False
 
     def __str__(self):
-        return f"- Room {self.id}{" (blocked)" if self.blocked else ""}: {self.sensor}, {self.n_zombies} zombies"
+        return f"- Room {self.id}{' (blocked)' if self.blocked else ''}: {self.sensor}, {self.n_zombies} zombies"
 
 class Sensor:
     """
@@ -200,17 +200,19 @@ class Simulation:
     def show_state(self) -> None:
         self.building.show_state()
     
-    def save_state(self, name: str = "") -> None:
+    def save_state(self, name: str = "") -> str:
         if name == "":
             now = datetime.now().strftime("%d_%m_%y-%H_%M_%S")
-            file_name = f"{now}.json"
+            file_name = f"./saved_states/{now}.json"
         else:
-            file_name = f"{name}.json"
+            file_name = f"./saved_states/{name}.json"
 
         data = self.building.get_state()
 
         with open(file_name, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
+        
+        return file_name
     
     def load_state(self, name: str) -> Tuple[int, int]:
         if not isfile(name):
@@ -223,3 +225,8 @@ class Simulation:
         self.building.load_state(data)
 
         return data.get("floors"), data.get("rooms_per_floor")
+    
+    def reset(self) -> None:
+        total_floors = self.building.total_floors
+        rooms_per_floor = self.building.rooms_per_floor
+        self.building = Building(total_floors, rooms_per_floor)
