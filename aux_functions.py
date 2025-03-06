@@ -40,7 +40,7 @@ def find_save_file(name: str) -> str:
     if name[-5:] == ".json":
         name = name[:-5]
     
-    if isfile(f"{name}.json"):
+    if isfile(f"./saved_states/{name}.json"):
         return f"{name}.json"
     
     return False

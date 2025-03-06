@@ -1,6 +1,6 @@
 from typing import List, Tuple
 from random import randint
-from aux_functions import determine_zombies_moving
+from aux_functions import determine_zombies_moving, find_save_file
 from datetime import datetime
 from os.path import isfile
 import json
@@ -23,7 +23,7 @@ class Building:
     def show_state(self) -> None:
         for floor_idx, floor in enumerate(self.rooms):
             print("-"*30)
-            print(f"Piso {floor_idx}:\n")
+            print(f"Piso {floor_idx + 1}:\n")
             for room in floor:
                 print(room.show_state())
     
@@ -42,6 +42,21 @@ class Building:
             data["rooms"].append(floor_state)
         
         return data
+    
+    def load_state(self, data: dict) -> None:
+        self.total_floors = data.get("floors")
+        self.rooms_per_floor = data.get("rooms_per_floor")
+        rooms = data.get("rooms")
+
+        self.rooms: List[List[Room]] = []
+        for floor_idx in range(self.total_floors):
+            floor = []
+            for room_idx in range(self.rooms_per_floor):
+                n_zombies = rooms[floor_idx][room_idx][0]
+                sensor_state = True if rooms[floor_idx][room_idx][1] == "alert" else False
+                blocked = rooms[floor_idx][room_idx][2]
+                floor.append(Room(room_idx, n_zombies, sensor_state, blocked))
+            self.rooms.append(floor)
     
     def execute_step(self) -> None:
 
@@ -92,6 +107,22 @@ class Building:
             lobby.remove_zombies(quantity)
         
         lobby.commit_zombies()
+    
+    def block_room(self, floor_idx: int, room_idx: int) -> None:
+        self.rooms[floor_idx][room_idx].block_room()
+        self.show_state()
+    
+    def unblock_room(self, floor_idx: int, room_idx: int) -> None:
+        self.rooms[floor_idx][room_idx].unblock_room()
+        self.show_state()
+    
+    def clean_room(self, floor_idx: int, room_idx: int) -> None:
+        self.rooms[floor_idx][room_idx].clean_room()
+        self.show_state()
+    
+    def reset_sensor(self, floor_idx: int, room_idx: int) -> None:
+        self.rooms[floor_idx][room_idx].reset_sensor()
+        self.show_state()
 
 # class Floor:
 #     """
@@ -113,13 +144,13 @@ class Room:
     """
     Maneja el estado de una habitación
     """
-    def __init__(self, n_room: int):
+    def __init__(self, n_room: int, n_zombies: int = 0, sensor_state: bool = False, blocked: bool = False):
         self.id = n_room
-        self.sensor = Sensor()
-        self.n_zombies = 0
+        self.sensor = Sensor(sensor_state)
+        self.n_zombies = n_zombies
         self.entering_zombies = 0
         self.leaving_zombies = 0
-        self.blocked = False
+        self.blocked = blocked
 
     def show_state(self) -> str:
         return str(self)
@@ -145,18 +176,22 @@ class Room:
     
     def reset_sensor(self) -> None:
         self.sensor.state = False
+        print("Sensor reseteado")
     
     def clean_room(self) -> None:
         self.n_zombies = 0
+        print("Habitación limpiada")
     
     def block_room(self) -> None:
         self.blocked = True
+        print("Habitación bloqueada")
     
     def unblock_room(self) -> None:
         self.blocked = False
+        print("Habitación desbloqueada")
 
     def __str__(self):
-        return f"- Room {self.id}{' (blocked)' if self.blocked else ''}: {self.sensor}, {self.n_zombies} zombies"
+        return f"- Room {self.id + 1}{' (blocked)' if self.blocked else ''}: {self.sensor}, {self.n_zombies} zombies"
 
 class Sensor:
     """
@@ -165,8 +200,8 @@ class Sensor:
     state == False: normal
     state == True: alert (han pasado zombies por aquí)
     """
-    def __init__(self):
-        self._state = False
+    def __init__(self, init_state: bool = False):
+        self._state = init_state
     
     @property
     def state(self) -> bool:
@@ -193,9 +228,8 @@ class Simulation:
     def run_step(self) -> None:
         # Cada turno, una cantidad aleatoria de zombies entran o salen del edificio por la puerta de entrada
         self.building.add_or_remove_zombies(randint(-5, 15))
-
-        # Movimientos dentro del edificio
         self.building.execute_step()
+        self.show_state()
     
     def show_state(self) -> None:
         self.building.show_state()
@@ -215,11 +249,12 @@ class Simulation:
         return file_name
     
     def load_state(self, name: str) -> Tuple[int, int]:
-        if not isfile(name):
+        found_name = find_save_file(name)
+        if not found_name:
             print("El archivo no existe")
             return
         
-        with open(name, "r", encoding="utf-8") as f:
+        with open(f"./saved_states/{found_name}", "r", encoding="utf-8") as f:
             data = json.load(f)
         
         self.building.load_state(data)

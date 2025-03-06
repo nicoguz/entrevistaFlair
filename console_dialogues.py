@@ -25,14 +25,13 @@ MAIN_MENU_REGEX = r"[1-8]"
 
 CONFIG_MENU = f"""
 {line}
-[1] Verbosidad
-[2] Guardar Estado
-[3] Cargar Estado
-[4] Resetear Simulación
-[5] Volver al Menu Principal
+[1] Guardar Estado
+[2] Cargar Estado
+[3] Resetear Simulación
+[4] Volver al Menu Principal
 {line}\n
 """
-CONFIG_MENU_REGEX = r"[1-5]"
+CONFIG_MENU_REGEX = r"[1-4]"
 
 ROOM_ACTION_TEXT = """\
 Ingresa el número del piso y número de la habitación en forma Piso-Habitación.

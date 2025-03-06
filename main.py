@@ -112,13 +112,13 @@ def main_simulation():
             room_number = int(room_number) - 1
             
             if chosen_option == "3":
-                simulation.building.rooms[floor_number][room_number].block_room()
+                simulation.building.block_room(floor_number, room_number)
             elif chosen_option == "4":
-                simulation.building.rooms[floor_number][room_number].unblock_room()
+                simulation.building.unblock_room(floor_number, room_number)
             elif chosen_option == "5":
-                simulation.building.rooms[floor_number][room_number].clean_room()
+                simulation.building.clean_room(floor_number, room_number)
             elif chosen_option == "6":
-                simulation.building.rooms[floor_number][room_number].reset_sensor()
+                simulation.building.reset_sensor(floor_number, room_number)
         
         # Menú configuración
         elif chosen_option == "7":
@@ -139,7 +139,7 @@ def main_simulation():
 def load_state() -> Union[str, Simulation]:
     print("Estados guardados:")
     any_save_file = False
-    for file in listdir("./save_states"):
+    for file in listdir("./saved_states"):
         if file.endswith(".json"):
             any_save_file = True
             print(f"- {file}")
@@ -179,29 +179,31 @@ def config_loop(simulation: Simulation) -> None:
             print("Opción no valida. Para escoger solo debes ingresar el número de la opcion que deseas. Intenta de nuevo:")
             chosen_option = input(CONFIG_MENU).strip()
 
-        # TODO: ver si añado verbose
-        if chosen_option == "1":
-            pass
         # Guardar estado
-        elif chosen_option == "2":
+        if chosen_option == "1":
+            # Chequeo que no hayan demasiados archivos en la carpeta
+            if len(listdir("./saved_states")) >= 10:
+                print("Has alcanzado el límite (10) de archivos guardados. Elimina algunos para poder guardar el nuevo.")
+                print("Para eliminar estados debes hacerlo manualmente en la carpeta ./saved_states.")
+                continue
             file_name = input("Ingresa el nombre con el que deseas guardar el estado: ")
             print("Guardando estado...")
             saved_name = simulation.save_state(file_name)
             print(f"Estado guardado en el archivo {saved_name}")
 
         # Cargar estado
-        elif chosen_option == "3":
+        elif chosen_option == "2":
             state_info = load_state()
 
             # Volvemos al menú principal
-            if state_info[0] == "continue":
+            if state_info == "continue":
                 continue
 
             simulation = state_info
             return simulation
 
         # Resetear simulación
-        elif chosen_option == "4":
+        elif chosen_option == "3":
             response = input("Estás seguro que deseas resetear la simulación? (s/n): ").strip()
 
             if response.lower() == "s":
@@ -210,11 +212,8 @@ def config_loop(simulation: Simulation) -> None:
                 print("Simulación reseteada con éxito")
                 return
         
-        elif chosen_option == "5":
+        elif chosen_option == "4":
             return
-
-
-# TODO: Limitar los save states para evitar demasiados archivos
 
 if __name__ == "__main__":
     main_simulation()

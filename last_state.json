@@ -1,7 +1,0 @@
-{
-    "floors": 5,
-    "rooms_per_floor": 5,
-    "rooms": [
-        [[0, true, true]]
-    ]
-}
